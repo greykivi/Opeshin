@@ -1,0 +1,58 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.IO;
+using System.IO.Pipes;
+using System;
+using System.IO;
+using System.IO.Pipes;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+class PipeServer
+{
+
+    public struct Data
+    { 
+        public int number;
+        public int age;  //age это просто второе число
+    }
+    static void Main()
+    {
+        using (NamedPipeServerStream pipeServer =
+            new NamedPipeServerStream("testpipe", PipeDirection.InOut))
+        {
+            Console.WriteLine("Создан объект NamedPipeServerStream.");
+
+            // Wait for a client to connect
+            Console.Write("Ожидание подключения клиента...");
+            pipeServer.WaitForConnection();
+
+            Console.WriteLine("Клиент подключён.");
+ 
+                    Console.Write("Введите ваше число: ");
+                    int number_r = int.Parse(Console.ReadLine());
+                    Console.Write("Введите второе число: ");
+                    int number_s = int.Parse(Console.ReadLine());
+
+                    Data msg = new()
+                    {
+                        number = number_r,
+                        age = number_s
+                    };
+                    byte[] bytes = new byte[Unsafe.SizeOf<Data>()]; //////Перевод в байты
+                    Unsafe.As<byte, Data>(ref bytes[0]) = msg;
+                    pipeServer.Write(bytes);
+                    
+                    byte[] receivedBytes = new byte[Unsafe.SizeOf<Data>()];
+                    pipeServer.Read(receivedBytes);  
+                    Data receivedData = Unsafe.As<byte, Data>(ref receivedBytes[0]);
+                    Console.WriteLine($"Полученные данные: number = {receivedData.number}, age = {receivedData.age}"); //У тебя данные отправляются в клиента, в файле клиента нужно их поменять как ты хочешь(сложить их, перемножить и тд. )
+                    //Последняя строка выводит уже изменёные данные в файле клиента                                    //Это нужно что бы было видно обратную связь отправленных данных из сервера клиенту и от клиента к серверу
+                    //(у меня в переменную receivedData.number записывается сумма вводимых чисел)
+        }
+
+    }
+}
