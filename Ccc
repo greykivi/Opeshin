@@ -1,0 +1,47 @@
+using System;
+using System.IO;
+using System.IO.Pipes;
+using System.Text;
+using System.Threading;
+
+using System;
+using System.IO;
+using System.IO.Pipes;
+
+using static PipeClient;
+using System.Runtime.CompilerServices;
+
+class PipeClient
+{
+    public struct Data
+    {
+        public int number;
+        public int age;
+    }
+    static void Main(string[] args)
+    {
+        using (NamedPipeClientStream pipeClient =
+            new NamedPipeClientStream(".", "testpipe", PipeDirection.InOut))
+        {
+
+            // Connect to the pipe or wait until the pipe is available.
+            Console.Write("Попытка подсоединения к каналу?...");
+            pipeClient.Connect();
+
+            Console.WriteLine("Подсоединен к каналу.");
+            Console.WriteLine("В настоящее время открыто {0} экземпляров конвейерного сервера.", pipeClient.NumberOfServerInstances);
+            byte[] bytes = new byte[Unsafe.SizeOf<Data>()];
+            pipeClient.Read(bytes);
+            Data receivedData = Unsafe.As<byte, Data>(ref bytes[0]);
+            Console.WriteLine("Число: " + receivedData.number);
+            Console.WriteLine("Второе число: " + receivedData.age);
+            //Console.WriteLine($"Received data: name = {receivedData.number} , age =  {receivedData.age}");
+            receivedData.number += receivedData.age;     //То место где у меня меняются данные (певое число складывается со вторым и записывается в первое(receivedData.number), а второе остаётся таким-же)
+            byte[] modifiedBytes = new byte[Unsafe.SizeOf<Data>()];
+            Unsafe.As<byte, Data>(ref modifiedBytes[0]) = receivedData;
+            pipeClient.Write(modifiedBytes);
+        }
+        Console.Write("Нажмите Enter, чтобы продолжить...");
+        Console.ReadLine();
+    }
+}
